@@ -1,0 +1,181 @@
+:root {
+    box-sizing: border-box; /* 设置根元素的 box-sizing: border-box */
+}
+*,
+*:before,
+*:after {
+    box-sizing: inherit; /* box-sizing 继承自父元素 */
+}
+
+html {
+    background-color: black;
+}
+
+.container {
+    max-width: 500px;
+    min-width: 300px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+.container p {
+    margin: 0;
+}
+
+.container .button {
+    cursor: pointer;
+
+    padding: 5px 10px;
+    /* 两端变圆 */
+    border-radius: 999999px;
+
+    user-select: none;
+}
+
+.container .search-box {
+    display: flex;
+    gap: 10px;
+}
+
+.container .search-input {
+    flex: 1;
+
+    padding: 5px 10px;
+
+    border: none;
+    outline: none;
+
+    /* 两端变圆 */
+    border-radius: 999999px;
+}
+
+.container .post {
+    background-color: #0f0f0f;
+    padding: 20px;
+    border-radius: 16px;
+
+    margin: 20px 0;
+}
+
+.container .post .content {
+    color: white;
+
+    margin-bottom: 20px;
+}
+
+.container .post .bottom {
+    color: white;
+    font-size: 12px;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.container .post .bottom .buttons {
+    display: flex;
+    /* 子项的间距 */
+    gap: 10px;
+
+    opacity: 0;
+
+    transition: opacity 0.5s;
+}
+
+.container .post:hover .bottom .buttons {
+    opacity: 1;
+}
+
+@media (max-width: 768px) {
+    /* 手机模式下常驻显示 */
+    .container .post .bottom .buttons {
+        opacity: 0.5;
+    }
+}
+
+.container .post .bottom .buttons .edit {
+    background-color: teal;
+}
+
+.container .post .bottom .buttons .delete {
+    background-color: orangered;
+}
+
+.container .post .bottom .buttons .confirm {
+    background-color: teal;
+}
+
+.publish {
+    width: 60px;
+    height: 60px;
+
+    background-color: teal;
+    color: white;
+
+    font-weight: bold;
+    border-radius: 50%;
+
+    /* 方法一 */
+    /* text-align: center; */
+    /* 字会在一行居中 */
+    /* line-height: 60px; */
+
+    /* 方法二 */
+    display: flex;
+    /* 水平 */
+    justify-content: center;
+    /* 垂直 */
+    align-items: center;
+
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+
+    cursor: pointer;
+
+    /* 禁止选中文本 */
+    user-select: none;
+}
+
+.container .post .time {
+    color: #aaa;
+}
+
+.container .post .input-content {
+    width: 100%;
+    height: 100px;
+
+    margin-bottom: 20px;
+
+    outline: none;
+    border: none;
+    background-color: #aaa;
+
+    padding: 10px;
+
+    border-radius: 6px;
+}
+
+.container .input-dialog .bottom .buttons {
+    opacity: 1;
+}
+
+.container .cancel {
+    background-color: gray;
+}
+
+.container .input-dialog .bottom {
+    justify-content: flex-end;
+}
+
+.container .title {
+    color: white;
+}
+
+.container .empty {
+    color: #aaa;
+    font-size: 20px;
+
+    margin: 80px 0;
+
+    text-align: center;
+}
