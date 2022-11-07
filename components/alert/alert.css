@@ -1,0 +1,56 @@
+.message-container {
+    position: fixed;
+
+    /* 固定定位水平居中 */
+    top: 0;
+    left: 0;
+    right: 0;
+    margin: auto;
+    width: max-content;
+
+    /* 忽略鼠标事件 */
+    pointer-events: none;
+}
+
+.message-container .text {
+    width: max-content;
+    min-width: 300px;
+    padding: 20px;
+    border-radius: 6px;
+
+    font-size: 14px;
+    font-weight: bold;
+    line-height: 20px;
+
+    margin: 0 auto;
+
+    transition: all 1s;
+
+    opacity: 0;
+
+    /* 消息的高度 */
+    margin-top: -60px;
+}
+.message-container .text.animation {
+    opacity: 1;
+
+    /* 消息的间距 */
+    margin-top: 20px;
+}
+
+.message-container .text.info {
+    background-color: #f4f4f5;
+    color: #909399;
+}
+.message-container .text.error {
+    background-color: #fef0f0;
+    color: #f56c6c;
+}
+.message-container .text.warning {
+    background-color: #fdf6ec;
+    color: #e6a23c;
+}
+.message-container .text.success {
+    background-color: #f0f9eb;
+    color: #67c23a;
+}

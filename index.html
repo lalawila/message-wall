@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>三眼鸭的消息墙</title>
+        <script src="./components/api/api.js"></script>
+        <script src="./components/alert/alert.js"></script>
+        <link rel="stylesheet" href="./components/alert/alert.css" />
+        <script>
+            const api = new Api("https://3yya.com/u/d8cf630cf5f367cc/rest/app")
+            const myAlert = new Alert()
+
+            window.addEventListener("load", function () {
+                // 把查询字符串中的值赋值给搜索框
+                document.querySelector(".search").value = new URL(
+                    window.location.href
+                ).searchParams.get("search")
+                render()
+            })
+
+            function search() {
+                const search = document.querySelector(".search").value
+
+                // 浏览器的 url
+                const url = new URL(window.location.href)
+                url.searchParams.set("search", search)
+
+                // 刷新页面，URL 改变
+                window.location.href = url.href
+            }
+
+            function clean() {
+                // 浏览器的 url
+                const url = new URL(window.location.href)
+                url.searchParams.delete("search")
+
+                // 刷新页面，URL 改变
+                window.location.href = url.href
+            }
+
+            function showPublish() {
+                // 显示输入框
+                document.querySelector(".input-dialog").hidden = false
+
+                // 滚动到顶部
+                // this changes the scrolling behavior to "smooth"
+                window.scrollTo({ top: 0, behavior: "smooth" })
+            }
+
+            function cancel() {
+                // 隐藏输入框
+                document.querySelector(".input-dialog").hidden = true
+            }
+
+            async function confirm() {
+                // 发布内容
+
+                // 获取输入框的内容
+                const content = document.querySelector(".input-content").value
+
+                // 发布帖子
+                await api.createPost(content)
+                myAlert.alertSuccess("消息发布成功")
+
+                // 刷新页面数据
+                await render()
+
+                // 凿空输入框
+                document.querySelector(".input-content").value = ""
+
+                // 隐藏输入框
+                document.querySelector(".input-dialog").hidden = true
+            }
+
+            async function render() {
+                // 渲染页面内容
+
+                // 先清空数据
+                document.querySelector(".container .posts").innerHTML = ""
+
+                const result = await api.getPosts()
+
+                // 没有消息
+                document.querySelector(".empty").hidden =
+                    result.results.length != 0
+
+                for (const post of result.results) {
+                    const postElement = document.createElement("div")
+                    postElement.classList.add("post")
+
+                    const content = document.createElement("p")
+                    content.classList.add("content")
+                    content.textContent = post.content
+
+                    postElement.append(content)
+
+                    const bottom = document.createElement("div")
+                    bottom.classList.add("bottom")
+                    postElement.append(bottom)
+
+                    const time = document.createElement("p")
+                    time.classList.add("time")
+                    time.textContent = formatTime(post.publish_time)
+
+                    bottom.append(time)
+
+                    const buttons = document.createElement("div")
+                    buttons.classList.add("buttons")
+                    bottom.append(buttons)
+
+                    const edit = document.createElement("div")
+                    edit.classList.add("button")
+                    edit.classList.add("edit")
+
+                    edit.onclick = function () {
+                        // 1. 创建输入框
+                        const input = document.createElement("textarea")
+                        input.classList.add("input-content")
+                        input.value = content.textContent
+
+                        // 2. 把文本元素替换成输入框
+                        content.replaceWith(input)
+
+                        // 3. 创建确认按钮
+                        const confirm = document.createElement("div")
+                        confirm.classList.add("button")
+                        confirm.classList.add("edit")
+                        confirm.textContent = "确认"
+
+                        confirm.onclick = async function () {
+                            // 1. 更新消息
+                            await api.updatePost(post.post_id, input.value)
+                            myAlert.alertSuccess("消息更新成功")
+
+                            // 2. 输入框替换回原来的文本元素
+                            content.textContent = input.value
+                            input.replaceWith(content)
+
+                            // 3. 确认替换回编辑
+                            confirm.replaceWith(edit)
+                        }
+
+                        // 4. 编辑按钮替换成确认按钮
+                        edit.replaceWith(confirm)
+                    }
+
+                    edit.textContent = "编辑"
+                    buttons.append(edit)
+
+                    const deleteElement = document.createElement("div")
+                    deleteElement.classList.add("button")
+                    deleteElement.classList.add("delete")
+                    deleteElement.textContent = "删除"
+
+                    deleteElement.onclick = async function () {
+                        // 1. 调用删除接口
+                        await api.deletePost(post.post_id)
+                        myAlert.alertSuccess("删除成功")
+
+                        // 2. 删掉消息元素自身
+                        postElement.remove()
+                    }
+
+                    buttons.append(deleteElement)
+
+                    document
+                        .querySelector(".container .posts")
+                        .append(postElement)
+                }
+            }
+
+            function formatTime(timestamp) {
+                const time = new Date(timestamp * 1000)
+                return `${time.getFullYear()}-${fillZero(
+                    time.getMonth() + 1
+                )}-${time.getDate()} ${fillZero(time.getHours())}:${fillZero(
+                    time.getMinutes()
+                )}`
+            }
+
+            function fillZero(n) {
+                return n < 10 ? `0${n}` : n
+            }
+        </script>
+        <style>
+            html {
+                background-color: black;
+            }
+
+            .container {
+                width: 450px;
+                margin: 0 auto;
+            }
+            .container p {
+                margin: 0;
+            }
+
+            .container .post {
+                background-color: #0f0f0f;
+                padding: 20px;
+                border-radius: 16px;
+
+                margin: 20px 0;
+            }
+
+            .container .post .content {
+                color: white;
+
+                margin-bottom: 20px;
+            }
+
+            .container .post .bottom {
+                color: white;
+                font-size: 12px;
+
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .container .post .bottom .buttons {
+                display: flex;
+                /* 子项的间距 */
+                gap: 10px;
+
+                opacity: 0;
+
+                transition: opacity 0.5s;
+            }
+
+            .container .post:hover .bottom .buttons {
+                opacity: 1;
+            }
+
+            .container .post .bottom .button {
+                cursor: pointer;
+
+                padding: 5px 10px;
+                /* 两端变圆 */
+                border-radius: 999999px;
+            }
+
+            .container .post .bottom .buttons .edit {
+                background-color: teal;
+            }
+
+            .container .post .bottom .buttons .delete {
+                background-color: orangered;
+            }
+
+            .container .post .bottom .buttons .confirm {
+                background-color: teal;
+            }
+
+            .publish {
+                width: 60px;
+                height: 60px;
+
+                background-color: teal;
+                color: white;
+
+                font-weight: bold;
+                border-radius: 50%;
+
+                /* 方法一 */
+                /* text-align: center; */
+                /* 字会在一行居中 */
+                /* line-height: 60px; */
+
+                /* 方法二 */
+                display: flex;
+                /* 水平 */
+                justify-content: center;
+                /* 垂直 */
+                align-items: center;
+
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+
+                cursor: pointer;
+            }
+
+            .container .post .time {
+                color: #aaa;
+            }
+
+            .container .post .input-content {
+                width: 100%;
+                height: 100px;
+
+                margin-bottom: 20px;
+
+                outline: none;
+                border: none;
+                background-color: #aaa;
+
+                padding: 10px;
+
+                border-radius: 6px;
+            }
+
+            .container .input-dialog .bottom .buttons {
+                opacity: 1;
+            }
+
+            .container .input-dialog .bottom .buttons .cancel {
+                background-color: gray;
+            }
+
+            .container .input-dialog .bottom {
+                justify-content: flex-end;
+            }
+
+            .container .title {
+                color: white;
+            }
+
+            .container .empty {
+                color: #aaa;
+                font-size: 20px;
+
+                margin: 80px 0;
+
+                text-align: center;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1 class="title">三眼鸭的消息墙</h1>
+            <input class="search" type="text" placeholder="搜索" />
+            <button onclick="search()">搜索</button>
+            <button onclick="clean()">清除</button>
+            <p class="empty" hidden>什么消息都没有~</p>
+            <div class="post input-dialog" hidden>
+                <textarea
+                    class="input-content"
+                    placeholder="请输入消息"
+                ></textarea>
+                <div class="bottom">
+                    <div class="buttons">
+                        <div class="button confirm" onclick="confirm()">
+                            确认
+                        </div>
+                        <div class="button cancel" onclick="cancel()">取消</div>
+                    </div>
+                </div>
+            </div>
+            <div class="posts"></div>
+            <!-- <div class="post">
+            <div class="content">你好你好你好</div>
+            <div class="bottom">
+                <p class="time">2022-5-31 12:22</p>
+                <div class="buttons">
+                    <div class="button edit">编程</div>
+                    <div class="button delete">删除</div>
+                </div>
+            </div>
+        </div> -->
+        </div>
+        <div class="publish" onclick="showPublish()">发布</div>
+    </body>
+</html>
