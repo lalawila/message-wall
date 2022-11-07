@@ -1,7 +1,8 @@
 class Alert {
     constructor(duration = 5000) {
-        this.duration = duration
+        console.assert(duration >= 1500, "至少 1500 毫秒")
 
+        this.duration = duration
         window.addEventListener("load", function () {
             if (!document.querySelector(".message-container")) {
                 // 消息的容器
@@ -13,12 +14,6 @@ class Alert {
             }
         })
     }
-
-    // 二次封装函数
-    alertInfo = (msg) => this.showMsg({ msg, type: "info" })
-    alertSuccess = (msg) => this.showMsg({ msg, type: "success" })
-    alertWarning = (msg) => this.showMsg({ msg, type: "warning" })
-    alertError = (msg) => this.showMsg({ msg, type: "error" })
 
     showMsg({ msg = "", type = "info", duration = this.duration } = {}) {
         // type:
@@ -43,4 +38,10 @@ class Alert {
         // 删除元素
         setTimeout(() => text.remove(), duration)
     }
+
+    // 二次封装函数
+    alertInfo = (msg) => this.showMsg({ msg, type: "info" })
+    alertSuccess = (msg) => this.showMsg({ msg, type: "success" })
+    alertWarning = (msg) => this.showMsg({ msg, type: "warning" })
+    alertError = (msg) => this.showMsg({ msg, type: "error" })
 }

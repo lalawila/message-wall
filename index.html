@@ -4,97 +4,27 @@
         <meta charset="UTF-8" />
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>三眼鸭的消息墙</title>
+        <title>消息墙</title>
         <script src="./components/api/api.js"></script>
         <script src="./components/alert/alert.js"></script>
         <link rel="stylesheet" href="./components/alert/alert.css" />
         <script>
-            const api = new Api("https://3yya.com/u/d8cf630cf5f367cc/rest/app")
-            const myAlert = new Alert()
+            class Post {
+                constructor({ postId, content, publishTime }) {
+                    this.postId = postId
+                    this.content = content
+                    this.publishTime = publishTime
+                }
 
-            window.addEventListener("load", function () {
-                // 把查询字符串中的值赋值给搜索框
-                document.querySelector(".search").value = new URL(
-                    window.location.href
-                ).searchParams.get("search")
-                render()
-            })
-
-            function search() {
-                const search = document.querySelector(".search").value
-
-                // 浏览器的 url
-                const url = new URL(window.location.href)
-                url.searchParams.set("search", search)
-
-                // 刷新页面，URL 改变
-                window.location.href = url.href
-            }
-
-            function clean() {
-                // 浏览器的 url
-                const url = new URL(window.location.href)
-                url.searchParams.delete("search")
-
-                // 刷新页面，URL 改变
-                window.location.href = url.href
-            }
-
-            function showPublish() {
-                // 显示输入框
-                document.querySelector(".input-dialog").hidden = false
-
-                // 滚动到顶部
-                // this changes the scrolling behavior to "smooth"
-                window.scrollTo({ top: 0, behavior: "smooth" })
-            }
-
-            function cancel() {
-                // 隐藏输入框
-                document.querySelector(".input-dialog").hidden = true
-            }
-
-            async function confirm() {
-                // 发布内容
-
-                // 获取输入框的内容
-                const content = document.querySelector(".input-content").value
-
-                // 发布帖子
-                await api.createPost(content)
-                myAlert.alertSuccess("消息发布成功")
-
-                // 刷新页面数据
-                await render()
-
-                // 凿空输入框
-                document.querySelector(".input-content").value = ""
-
-                // 隐藏输入框
-                document.querySelector(".input-dialog").hidden = true
-            }
-
-            async function render() {
-                // 渲染页面内容
-
-                // 先清空数据
-                document.querySelector(".container .posts").innerHTML = ""
-
-                const result = await api.getPosts()
-
-                // 没有消息
-                document.querySelector(".empty").hidden =
-                    result.results.length != 0
-
-                for (const post of result.results) {
+                renderElement() {
                     const postElement = document.createElement("div")
                     postElement.classList.add("post")
 
-                    const content = document.createElement("p")
-                    content.classList.add("content")
-                    content.textContent = post.content
+                    const contentElement = document.createElement("p")
+                    contentElement.classList.add("content")
+                    contentElement.textContent = this.content
 
-                    postElement.append(content)
+                    postElement.append(contentElement)
 
                     const bottom = document.createElement("div")
                     bottom.classList.add("bottom")
@@ -102,7 +32,7 @@
 
                     const time = document.createElement("p")
                     time.classList.add("time")
-                    time.textContent = formatTime(post.publish_time)
+                    time.textContent = this.formatTime(this.publishTime)
 
                     bottom.append(time)
 
@@ -110,91 +40,335 @@
                     buttons.classList.add("buttons")
                     bottom.append(buttons)
 
-                    const edit = document.createElement("div")
-                    edit.classList.add("button")
-                    edit.classList.add("edit")
+                    const editElement = document.createElement("div")
+                    editElement.classList.add("button")
+                    editElement.classList.add("edit")
 
-                    edit.onclick = function () {
-                        // 1. 创建输入框
-                        const input = document.createElement("textarea")
-                        input.classList.add("input-content")
-                        input.value = content.textContent
+                    // 创建输入框
+                    const inputElement = document.createElement("textarea")
+                    inputElement.classList.add("input-content")
+                    inputElement.value = this.content
 
-                        // 2. 把文本元素替换成输入框
-                        content.replaceWith(input)
+                    // 创建确认按钮
+                    const confirmElement = document.createElement("div")
+                    confirmElement.classList.add("button")
+                    confirmElement.classList.add("confirm")
+                    confirmElement.textContent = "确认"
 
-                        // 3. 创建确认按钮
-                        const confirm = document.createElement("div")
-                        confirm.classList.add("button")
-                        confirm.classList.add("edit")
-                        confirm.textContent = "确认"
+                    // 创建取消按钮
+                    const cancelElement = document.createElement("div")
+                    cancelElement.classList.add("button")
+                    cancelElement.classList.add("cancel")
+                    cancelElement.textContent = "取消"
 
-                        confirm.onclick = async function () {
-                            // 1. 更新消息
-                            await api.updatePost(post.post_id, input.value)
-                            myAlert.alertSuccess("消息更新成功")
-
-                            // 2. 输入框替换回原来的文本元素
-                            content.textContent = input.value
-                            input.replaceWith(content)
-
-                            // 3. 确认替换回编辑
-                            confirm.replaceWith(edit)
-                        }
-
-                        // 4. 编辑按钮替换成确认按钮
-                        edit.replaceWith(confirm)
+                    editElement.onclick = () => {
+                        // 点击编辑
+                        contentElement.replaceWith(inputElement)
+                        // 编辑按钮替换成确认按钮
+                        editElement.replaceWith(confirmElement)
+                        // 6. 删除按钮替换成取消按钮
+                        deleteElement.replaceWith(cancelElement)
                     }
 
-                    edit.textContent = "编辑"
-                    buttons.append(edit)
+                    confirmElement.onclick = async () => {
+                        // 1. 更新消息
+                        await api.updatePost(this.postId, inputElement.value)
+                        myAlert.alertSuccess("消息更新成功")
+
+                        // 2. 输入框替换回原来的文本元素
+                        contentElement.textContent = inputElement.value
+
+                        inputElement.replaceWith(contentElement)
+                        confirmElement.replaceWith(editElement)
+                        cancelElement.replaceWith(deleteElement)
+                    }
+
+                    cancelElement.onclick = function () {
+                        inputElement.replaceWith(contentElement)
+                        confirmElement.replaceWith(editElement)
+                        cancelElement.replaceWith(deleteElement)
+                    }
+
+                    editElement.textContent = "编辑"
+                    buttons.append(editElement)
 
                     const deleteElement = document.createElement("div")
                     deleteElement.classList.add("button")
                     deleteElement.classList.add("delete")
                     deleteElement.textContent = "删除"
 
-                    deleteElement.onclick = async function () {
-                        // 1. 调用删除接口
-                        await api.deletePost(post.post_id)
-                        myAlert.alertSuccess("删除成功")
+                    deleteElement.onclick = async () => {
+                        if (confirm("确定要删除吗？")) {
+                            // 1. 调用删除接口
+                            await api.deletePost(this.postId)
+                            myAlert.alertSuccess("删除成功")
 
-                        // 2. 删掉消息元素自身
-                        postElement.remove()
+                            // 2. 删掉消息元素自身
+                            postElement.remove()
+                        }
                     }
 
                     buttons.append(deleteElement)
 
-                    document
-                        .querySelector(".container .posts")
-                        .append(postElement)
+                    return postElement
+                }
+
+                formatTime(timestamp) {
+                    // 时间戳转成时间
+                    const time = new Date(timestamp * 1000)
+                    return `${time.getFullYear()}-${this.fillZero(
+                        time.getMonth() + 1
+                    )}-${time.getDate()} ${this.fillZero(
+                        time.getHours()
+                    )}:${this.fillZero(time.getMinutes())}`
+                }
+
+                fillZero(n) {
+                    return n < 10 ? `0${n}` : n
                 }
             }
 
-            function formatTime(timestamp) {
-                const time = new Date(timestamp * 1000)
-                return `${time.getFullYear()}-${fillZero(
-                    time.getMonth() + 1
-                )}-${time.getDate()} ${fillZero(time.getHours())}:${fillZero(
-                    time.getMinutes()
-                )}`
+            class Manager {
+                limit = 5
+                page = 1
+
+                // 是否加载中
+                isLoading = false
+                // 是否获取完成
+                isFinished = false
+
+                // 搜索的文本
+                search = ""
+
+                constructor() {
+                    window.addEventListener("load", () => {
+                        // 显示发布框
+                        document.querySelector("#container .publish").onclick =
+                            () => this.publishClick()
+
+                        // 三种方法：
+                        // 1. 将 publishClick 修改为箭头函数
+                        // publishClick = () => {}
+                        // 2. bind 绑定 this
+                        // this.publishClick.bind(this)
+                        // 3. 放到箭头函数中
+                        // () => this.publishClick()
+
+                        // 取消按钮，隐藏发布框
+                        document.querySelector("#container .cancel").onclick =
+                            () => this.cancelClick()
+
+                        // 发布按钮，发布消息
+                        document.querySelector("#container .confirm").onclick =
+                            () => this.confirmClick()
+
+                        document.querySelector("#container .search").onclick =
+                            () => this.searchClick()
+
+                        document.querySelector("#container .clear").onclick =
+                            () => this.clearClick()
+
+                        window.addEventListener("scroll", () => {
+                            // 滚动距离页面底部的距离
+                            // HTML 元素内容的整体高度 - （HTML 元素顶部滚动出的高度 + ）
+                            // 参考 https://3yya.com/courseware/chapter/211
+                            const bottomOfWindowHeight =
+                                document.documentElement.offsetHeight -
+                                (document.documentElement.scrollTop +
+                                    document.documentElement.clientHeight)
+
+                            if (bottomOfWindowHeight < 100) {
+                                // 页面距离底部小于 100 像素
+                                // 加载数据
+                                this.getPosts()
+                            }
+                        })
+
+                        // 读取帖子
+                        this.getPosts()
+                    })
+                }
+
+                searchClick() {
+                    this.search = document.querySelector(
+                        "#container .search-input"
+                    ).value
+                    this.getPosts(true)
+                }
+
+                clearClick() {
+                    this.search = ""
+                    this.getPosts(true)
+                }
+
+                publishClick() {
+                    document.querySelector(
+                        "#container .input-dialog"
+                    ).hidden = false
+
+                    // 平滑滚到页头
+                    window.scrollTo({ top: 0, behavior: "smooth" })
+                }
+
+                cancelClick() {
+                    document.querySelector(
+                        "#container .input-dialog"
+                    ).hidden = true
+                }
+
+                async confirmClick() {
+                    const content = document.querySelector(
+                        "#container .input-content"
+                    ).value
+
+                    if (content.length < 5) {
+                        myAlert.alertWarning("至少 5 个字符。")
+                        return
+                    }
+
+                    if (content.length > 100) {
+                        myAlert.alertWarning("最多 100 个字符。")
+                        return
+                    }
+
+                    await api.publishPost(content)
+
+                    myAlert.alertSuccess("发布成功")
+
+                    document.querySelector("#container .input-content").value =
+                        ""
+                    document.querySelector(
+                        "#container .input-dialog"
+                    ).hidden = true
+
+                    this.getPosts(true)
+                }
+
+                async getPosts(refresh = false) {
+                    if (refresh) {
+                        // 刷新页面
+                        this.isFinished = false
+                        this.page = 1
+
+                        document.querySelector(
+                            "#container .empty"
+                        ).hidden = true
+                        document.querySelector("#container .posts").innerHTML =
+                            ""
+                    }
+
+                    if (this.isLoading || this.isFinished) {
+                        // 如果在加载中，或没有数据了，则直接退出
+                        return
+                    }
+
+                    this.isLoading = true
+                    const posts = await api.getPosts({
+                        page: this.page,
+                        limit: this.limit,
+                        search: this.search,
+                    })
+                    this.isLoading = false
+
+                    if (posts.results.length === 0) {
+                        // 已经没有更多了
+                        this.isFinished = true
+                        document.querySelector(
+                            "#container .empty"
+                        ).hidden = false
+                        return
+                    }
+
+                    const postsElement =
+                        document.querySelector("#container .posts")
+                    posts.results.forEach((data) => {
+                        const post = new Post({
+                            postId: data.post_id,
+                            content: data.content,
+                            publishTime: data.publish_time,
+                        })
+
+                        postsElement.append(post.renderElement())
+                    })
+
+                    this.page++
+
+                    if (!this.isScroll()) {
+                        // 如果没出现滚动条
+                        // 则继续拿数据
+                        return this.getPosts()
+                    }
+                }
+
+                isScroll() {
+                    // 是否出现了滚动条
+                    return (
+                        document.documentElement.clientHeight !=
+                        document.documentElement.scrollHeight
+                    )
+                }
             }
 
-            function fillZero(n) {
-                return n < 10 ? `0${n}` : n
-            }
+            // api 实例
+            const api = new Api("https://3yya.com/u/d8cf630cf5f367cc/rest/app")
+            // const api = new Api(
+            //     "http://127.0.0.1:9000/u/d8cf630cf5f367cc/rest/app"
+            // )
+
+            // alert 实例
+            const myAlert = new Alert(3500)
+
+            new Manager()
         </script>
         <style>
+            :root {
+                box-sizing: border-box; /* 设置根元素的 box-sizing: border-box */
+            }
+            *,
+            *:before,
+            *:after {
+                box-sizing: inherit; /* box-sizing 继承自父元素 */
+            }
+
             html {
                 background-color: black;
             }
 
             .container {
-                width: 450px;
+                max-width: 500px;
+                min-width: 300px;
                 margin: 0 auto;
+                padding: 0 20px;
             }
             .container p {
                 margin: 0;
+            }
+
+            .container .button {
+                cursor: pointer;
+
+                padding: 5px 10px;
+                /* 两端变圆 */
+                border-radius: 999999px;
+
+                user-select: none;
+            }
+
+            .container .search-box {
+                display: flex;
+                gap: 10px;
+            }
+
+            .container .search-input {
+                flex: 1;
+
+                padding: 5px 10px;
+
+                border: none;
+                outline: none;
+
+                /* 两端变圆 */
+                border-radius: 999999px;
             }
 
             .container .post {
@@ -234,12 +408,11 @@
                 opacity: 1;
             }
 
-            .container .post .bottom .button {
-                cursor: pointer;
-
-                padding: 5px 10px;
-                /* 两端变圆 */
-                border-radius: 999999px;
+            @media (max-width: 768px) {
+                /* 手机模式下常驻显示 */
+                .container .post .bottom .buttons {
+                    opacity: 0.5;
+                }
             }
 
             .container .post .bottom .buttons .edit {
@@ -281,6 +454,9 @@
                 right: 20px;
 
                 cursor: pointer;
+
+                /* 禁止选中文本 */
+                user-select: none;
             }
 
             .container .post .time {
@@ -306,7 +482,7 @@
                 opacity: 1;
             }
 
-            .container .input-dialog .bottom .buttons .cancel {
+            .container .cancel {
                 background-color: gray;
             }
 
@@ -329,12 +505,17 @@
         </style>
     </head>
     <body>
-        <div class="container">
+        <div id="container" class="container">
             <h1 class="title">三眼鸭的消息墙</h1>
-            <input class="search" type="text" placeholder="搜索" />
-            <button onclick="search()">搜索</button>
-            <button onclick="clean()">清除</button>
-            <p class="empty" hidden>什么消息都没有~</p>
+            <div class="search-box">
+                <input
+                    type="text"
+                    class="search-input"
+                    placeholder="输入你要搜索的内容"
+                />
+                <button class="button search">搜索</button>
+                <button class="button clear">清除</button>
+            </div>
             <div class="post input-dialog" hidden>
                 <textarea
                     class="input-content"
@@ -342,25 +523,25 @@
                 ></textarea>
                 <div class="bottom">
                     <div class="buttons">
-                        <div class="button confirm" onclick="confirm()">
-                            确认
-                        </div>
-                        <div class="button cancel" onclick="cancel()">取消</div>
+                        <div class="button confirm">确认</div>
+                        <div class="button cancel">取消</div>
                     </div>
                 </div>
             </div>
-            <div class="posts"></div>
-            <!-- <div class="post">
-            <div class="content">你好你好你好</div>
-            <div class="bottom">
-                <p class="time">2022-5-31 12:22</p>
-                <div class="buttons">
-                    <div class="button edit">编程</div>
-                    <div class="button delete">删除</div>
-                </div>
+            <div class="posts">
+                <!-- <div class="post">
+                    <div class="content">你好你好你好</div>
+                    <div class="bottom">
+                        <p class="time">2022-5-31 12:22</p>
+                        <div class="buttons">
+                            <div class="button edit">编程</div>
+                            <div class="button delete">删除</div>
+                        </div>
+                    </div>
+                </div> -->
             </div>
-        </div> -->
+            <p class="empty" hidden>已经没有更多消息了~</p>
+            <div class="publish">发布</div>
         </div>
-        <div class="publish" onclick="showPublish()">发布</div>
     </body>
 </html>
