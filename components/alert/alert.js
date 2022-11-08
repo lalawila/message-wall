@@ -32,7 +32,7 @@ class Alert {
         container.append(text)
 
         // 显示动画
-        setTimeout(() => text.classList.add("animation"), 10)
+        setTimeout(() => text.classList.add("animation"), 100)
         // 隐去动画
         setTimeout(() => text.classList.remove("animation"), duration - 1000)
         // 删除元素
